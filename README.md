@@ -9,6 +9,11 @@ The actual kernel source lives in a separate tree
 this repo only holds the pieces around it: the pre-Linux boot chain that runs
 before GRUB, and the scripts used to build/install/remove kernel packages.
 
+See also [`GUNYAH_EXIT_SMC.md`](GUNYAH_EXIT_SMC.md) — an investigation into
+whether this laptop's firmware supports a cleaner EL2 handoff than the
+Secure-Launch detour below (short answer: not currently), with a reproducible
+firmware-extraction method (`tools/parse_capsule.py`) in case that changes.
+
 ## Boot chain
 
 ```mermaid
