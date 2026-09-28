@@ -213,3 +213,7 @@ together and documents other people's work for this specific machine:
 - **[TianoCore EDK2](https://github.com/tianocore/edk2)** project — the UEFI
   Shell binary (`Shellaa64.efi`) `startup.nsh` runs under.
 - **Tobias Heider / Canonical** — `ubuntu-x1e-settings`, referenced above.
+- The broader **[Ubuntu Concept: Snapdragon X Elite](https://discourse.ubuntu.com/t/ubuntu-concept-snapdragon-x-elite/48800)**
+  community thread and everyone in it — the shared, ongoing effort to bring
+  up Linux on this generation of Snapdragon X Elite laptops that all of the
+  above (and this repo) builds on.
