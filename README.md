@@ -11,6 +11,44 @@ before GRUB, and the scripts used to build/install/remove kernel packages.
 
 ## Boot chain
 
+```mermaid
+flowchart TD
+    Power(["Power on"]) --> Menu{"UEFI firmware<br/>boot menu"}
+
+    Menu -->|"Boot0001: Ubuntu"| Direct["shimaa64.efi -&gt; grubaa64.efi<br/>(qebspil/slbounce never run)"]
+    Menu -->|"Boot0002: slbounce loader"| Shell["Shellaa64.efi (UEFI Shell)<br/>auto-runs startup.nsh"]
+
+    Shell --> Qeb["qebspilaa64.efi<br/>PAS cold-boots ADSP + CDSP<br/>(needs plain fw staged on ESP)"]
+    Qeb --> Slb["slbounceaa64.efi<br/>hooks ExitBootServices()<br/>(needs tcblaunch.exe)"]
+    Slb --> GrubSL["grubaa64.efi"]
+
+    Direct --> MenuDirect{"GRUB menu (41_custom)"}
+    GrubSL --> MenuSL{"GRUB menu (41_custom)"}
+
+    MenuDirect -->|"EL1 / NO KVM"| El1["vmlinuz + /boot/dtb<br/>Gunyah hosts EL2, works fine"]
+    MenuDirect -->|"EL2 / KVM"| Broken["dtb_el2 loads, but the Secure-Launch<br/>hook was never installed -&gt;<br/>stays at EL1, will not come up"]
+
+    MenuSL -->|"EL1 / NO KVM"| El1SL["vmlinuz + /boot/dtb<br/>(SL hook installed but unused)"]
+    MenuSL -->|"EL2 / KVM"| El2Sel["vmlinuz.el2.raw + /boot/dtb_el2"]
+
+    El2Sel --> ExitBS["ExitBootServices() -&gt;<br/>Secure-Launch hook fires"]
+    ExitBS --> El2["CPU drops to EL2 as Linux/KVM<br/>(Windows' Gunyah replaced)"]
+
+    El1 --> AttachEl1["remoteproc cold-boots<br/>ADSP/CDSP itself"]
+    El2 --> AttachEl2["remoteproc attaches to the<br/>ADSP/CDSP qebspil already booted"]
+
+    AttachEl1 --> Audio(["Full internal audio"])
+    AttachEl2 --> Audio
+```
+
+Picking "EL2 / KVM" from GRUB only works if you got there via the
+**"slbounce loader"** firmware boot entry — reaching the same menu entry via
+the plain **"Ubuntu"** entry loads the EL2 device tree without ever having
+installed the Secure-Launch hook, so the CPU never actually leaves EL1 and
+the boot does not come up. This tripped up earlier iterations of this setup — a since-removed helper
+script (`el2-grub-entry.sh`) had this exact warning in its own comments —
+and is the single most common way to break the EL2 boot path.
+
 These WoA laptops ship a UEFI firmware that expects to launch Windows via
 Microsoft's Secure-Launch (DRTM) mechanism. `startup.nsh` is a UEFI Shell
 script that chain-loads three things, in order, before handing off to GRUB:
