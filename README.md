@@ -177,9 +177,8 @@ filesystem UUID (`21f58603-...`) — replace it with your own
 
 ## Scripts
 
-`scripts/install_t14s.sh`, `scripts/uninstall_t14s.sh`, and
-`scripts/rebuild_t14s.sh` build, install, and remove the kernel packages
-produced from the `linux-jq` source tree, and keep `/boot/dtb`,
-`/boot/dtb_el2`, `/boot/vmlinuz.el2.raw`, and the qebspil ESP firmware
-staging in sync with whichever kernel version is currently installed. See
-each script's `--help` for usage.
+`scripts/install_t14s.sh` and `scripts/uninstall_t14s.sh` install and remove
+the kernel packages built from the `linux-jq` source tree, and keep
+`/boot/dtb`, `/boot/dtb_el2`, `/boot/vmlinuz.el2.raw`, and the qebspil ESP
+firmware staging in sync with whichever kernel version is currently
+installed. See each script's `--help` for usage.
