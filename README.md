@@ -182,3 +182,34 @@ the kernel packages built from the `linux-jq` source tree, and keep
 `/boot/dtb`, `/boot/dtb_el2`, `/boot/vmlinuz.el2.raw`, and the qebspil ESP
 firmware staging in sync with whichever kernel version is currently
 installed. See each script's `--help` for usage.
+
+`ubuntu-x1e-settings` (a stock Canonical package, not vendored here — install
+it with `apt install ubuntu-x1e-settings`) provides
+`/etc/default/grub.d/ubuntu-x1e-settings.cfg`, which sets
+`GRUB_DISABLE_OS_PROBER=false`, the `clk_ignore_unused pd_ignore_unused
+cma=128M efi=noruntime` cmdline flags baked into both GRUB entries above, and
+a `GRUB_BADRAM` range for this platform.
+
+## Credits
+
+None of the actual hard engineering here is this repo's own — it just wires
+together and documents other people's work for this specific machine:
+
+- **[Stephan Gerhold](https://github.com/stephan-gh)** — wrote
+  [`qebspil`](https://github.com/stephan-gh/qebspil), the UEFI co-processor
+  loader this entire audio-under-EL2 fix depends on, plus the upstream
+  `qcom_q6v5_pas`/`qcom,broken-reset` work and companion kernel patches for
+  attaching to firmware qebspil starts early (see his
+  `git.kernel.org/pub/scm/linux/kernel/git/sre/linux-misc.git`,
+  branch `thinkpad-t14s-x1e`).
+- **[TravMurav](https://github.com/TravMurav)** — wrote
+  [`slbounce`](https://github.com/TravMurav/slbounce) and documented the
+  Secure-Launch process for Qualcomm devices
+  ([Qcom-Secure-Launch](https://github.com/TravMurav/Qcom-Secure-Launch)),
+  which is what makes self-hosted EL2 possible on this hardware at all.
+- **[Jens Glathe](https://github.com/jglathe) (oldschoolsolutions)** — the
+  `x1-el2*.dtso` overlay work this whole boot chain sits on top of, tested
+  across multiple X1E laptops including this T14s.
+- **[TianoCore EDK2](https://github.com/tianocore/edk2)** project — the UEFI
+  Shell binary (`Shellaa64.efi`) `startup.nsh` runs under.
+- **Tobias Heider / Canonical** — `ubuntu-x1e-settings`, referenced above.
