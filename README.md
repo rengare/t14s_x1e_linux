@@ -130,6 +130,51 @@ working boot and a broken one — presence of
 `qcom,apr ...: Adding APR/GPR dev` and `gpr:service@1:dais` lines is the
 signal that qebspil actually did its job.
 
+## Firmware boot menu entry
+
+`startup.nsh` only runs if something actually launches the UEFI Shell in the
+first place. On this machine that's a dedicated NVRAM boot entry, separate
+from the normal `Ubuntu` (shim → grub) entry, pointing straight at
+`Shellaa64.efi`:
+
+```
+$ efibootmgr -v
+BootOrder: 0001,0002,0000,...
+Boot0001* Ubuntu          HD(1,GPT,...)/\EFI\ubuntu\shimaa64.efi
+Boot0002* slbounce loader  HD(1,GPT,...)/\EFI\slbounce\Shellaa64.efi
+```
+
+Selecting "slbounce loader" from the firmware boot menu (e.g. F12 at power-on)
+launches the Shell, which auto-runs `\startup.nsh` at the ESP root — that's
+what starts the qebspil → slbounce → GRUB chain described below. Without this
+entry, there's no way to reach that chain short of manually driving the UEFI
+Shell by hand.
+
+To recreate it on another install (adjust `--disk`/`--part` to your ESP):
+
+```
+sudo efibootmgr --create --disk /dev/nvme0n1 --part 1 \
+  --label "slbounce loader" --loader '\EFI\slbounce\Shellaa64.efi'
+```
+
+## GRUB entries
+
+`boot/grub.d/41_custom` provides the two menu entries GRUB actually boots
+between:
+
+- **`Ubuntu, vmlinuz (EL1 / NO KVM)`** — normal boot, `/vmlinuz` + `/boot/dtb`,
+  Gunyah hosts EL2 as usual (no `/dev/kvm`).
+- **`Ubuntu, vmlinuz.el2.raw (EL2 / KVM)`** — self-hosted EL2, `vmlinuz.el2.raw`
+  + `/boot/dtb_el2`, Linux itself runs as the EL2 hypervisor (`/dev/kvm`
+  present) after `slbounce` does the Secure-Launch handoff. Reaching this
+  path is the entire reason the rest of this repo's boot chain exists.
+
+Both entries are kept 1:1 with what `10_linux` generates for the installed
+kernel (see the file's own header comment for how to re-diff after
+`update-grub`). The `search --fs-uuid` line hardcodes this machine's root
+filesystem UUID (`21f58603-...`) — replace it with your own
+(`findmnt -no UUID /`) if adapting this elsewhere.
+
 ## Scripts
 
 `scripts/install_t14s.sh`, `scripts/uninstall_t14s.sh`, and

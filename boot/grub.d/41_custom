@@ -1,0 +1,42 @@
+#!/bin/sh
+exec tail -n +3 $0
+# This file provides an EL1/KVM boot entry for the qcom-x1e -jg kernel,
+# using the stubble-unwrapped kernel image to avoid the TPM measure.c assert.
+#
+# The EL1 entry below is kept 1:1 with what 10_linux generates for the
+# installed kernel (same modules, $linux_gfx_mode, cmdline flags incl.
+# quiet/splash/crashkernel, initrd and devicetree lines) - see
+# /boot/grub/grub.cfg's "Advanced options for Ubuntu" submenu entry for
+# the currently installed kernel to re-diff after an update-grub.
+
+menuentry 'Ubuntu, vmlinuz (EL1 / NO KVM)' --class ubuntu --class gnu-linux --class gnu --class os --id el1 {
+	recordfail
+	load_video
+	set gfxpayload=$linux_gfx_mode
+	insmod gzio
+	if [ x$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi
+	insmod part_gpt
+	insmod ext2
+	search --no-floppy --fs-uuid --set=root 21f58603-6fbb-416d-8894-3197325dbcd5
+	echo 'Loading Linux at EL1 ...'
+	linux	/vmlinuz root=/dev/mapper/ubuntu--vg-ubuntu--lv ro  clk_ignore_unused pd_ignore_unused cma=128M efi=noruntime quiet splash console=tty0 snd_soc_x1e80100.i_accept_the_danger=True apparmor=0 crashkernel=2G-4G:320M,4G-32G:512M,32G-64G:1024M,64G-128G:2048M,128G-:4096M
+	echo 'Loading initial ramdisk ...'
+	initrd	/initrd.img
+	echo 'Loading device tree blob...'
+	devicetree	/dtb
+}
+
+menuentry 'Ubuntu, vmlinuz.el2.raw (EL2 / KVM)' --class ubuntu --id el2 {
+	recordfail
+	load_video
+	insmod gzio
+	insmod part_gpt
+	insmod ext2
+	search --no-floppy --fs-uuid --set=root 21f58603-6fbb-416d-8894-3197325dbcd5
+	echo 'Loading Linux at EL2 ...'
+	linux	/vmlinuz.el2.raw root=/dev/mapper/ubuntu--vg-ubuntu--lv ro clk_ignore_unused pd_ignore_unused cma=128M efi=noruntime console=tty0 snd_soc_x1e80100.i_accept_the_danger=True apparmor=0 id_aa64mmfr0.ecv=1
+	echo 'Loading initial ramdisk ...'
+	initrd	/initrd.img
+	echo 'Loading EL2 device tree ...'
+	devicetree	/dtb_el2
+}
